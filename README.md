@@ -2,7 +2,7 @@
 
 This project is a personal exploration of agentic Retrieval Augmented Generation models and their potential for interacting with verified information sources. It utilizes the OpenAI API, LangChain, and LangGraph to query a vector database built from the freely accessible NHS Medicines API.
 
-While standard RAG excels at simple queries across a few documents, agentic RAG takes it a step further and emerges as a potent solution for question answering. It introduces a layer of intelligence by employing AI agents. These agents act as autonomous decision-makers, rewording the initial prompt to ensure efficient retrieval search, verifying the retrieved documents relevance to the question and strategically selecting the most tools for further data retrieval.
+While standard RAG excels at simple queries across a few documents, agentic RAG takes it a step further and emerges as a potent solution for question answering. It introduces a layer of intelligence by employing AI agents. These agents act as autonomous decision-makers, rewording the initial prompt to ensure efficient retrieval search, verifying the retrieved documents relevance to the question and strategically selecting the next course of action.
 
 **Important Disclaimer:**
 
