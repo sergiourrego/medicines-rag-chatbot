@@ -1,0 +1,4 @@
+.env
+chroma_db/
+.vscode/
+testdata/
