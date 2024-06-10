@@ -56,7 +56,7 @@ with open('backend/testdata/NHSmed/medication_table.json', 'r', encoding='utf-8'
 # Grab data from each medication url
 # Save to md and JSON file for LangChain Documents
 for med in medication_table["data"]:
-    name, url = med["name"], med["url"]
+    url = med["url"]
     try:
         response = requests.get(url, params=base_params)
         response.raise_for_status()  # Raise an exception for non-2xx status codes
@@ -79,7 +79,7 @@ for med in medication_table["data"]:
             subdescription = section.get("description", "")
             headline = section.get("headline", "")
             apiurl = section.get("url", "")
-            # convert api to site urlte
+            # convert api to site url
             suburl = re.sub(r'/api.', r'/', apiurl)
             ## add headline as subheading if present otherwise just description
             if headline == "":
@@ -105,22 +105,29 @@ for med in medication_table["data"]:
                 else :
                     paragraph_content += f"### {subhead}\n\n{cleaned_md}\n\n"
             # append paragraph to whole page
-            whole_page += paragraph_content
-            ## create LangChain Document for section and add to JSON
+            whole_page += paragraph_content#            
+            # create title from URL - prevent overlapping as some pages (Insulin) have multiple medications
+            nameroot = suburl.split("/")[4] # extract medication in url title
+            pattern = rf'{nameroot}/([^"]+?)/#' # extract subpage title
+            match = re.findall(pattern, suburl)
+            if match == []: # single pages do not have subpage urls so use headline instead
+                titlefromurl = headline
+            else:
+                titlefromurl = match[0].replace("-"," ").replace("/"," - ")
+            ## create LangChain Document for section
             doc = Document(
             page_content=paragraph_content,
                 metadata={
-                    "name": name,
+                    "med_name": name,
                     "url": suburl,
-                    "alternateName": alternateName,
-                    "description": description
+                    "alternate_names": alternateName,
+                    "page_description": description,
+                    "document_description" : titlefromurl
                 }
             )
-            # some overview sections have no headline
-            if headline == "":
-                headline = "Overview"
-            documentjson[headline] = doc.json()
-            print(f"Document created for {name} - {headline}")
+            # add section doc to JSON
+            documentjson[titlefromurl] = doc.json()
+            print(f"Document created for {name} - {titlefromurl}")
         # Save to md
         mdname = f"backend/testdata/NHSmed/{name}.md"
         with open(mdname, 'w', encoding='utf-8') as md_file:
@@ -139,11 +146,6 @@ for med in medication_table["data"]:
         print(f"An unexpected error occurred for {med}: {e}")
     # timeout
     time.sleep(7) 
-
-# # Write document dict to json
-# with open(file_name, "w") as json_file:
-#     json.dump(documents, json_file)
-#     print(f"Documents updated in documents.json")
     
 # # Read to array of docs
 # file_name = f"backend/testdata/NHSmed/documents.json"
