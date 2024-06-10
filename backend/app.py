@@ -60,9 +60,9 @@ local_llm = ChatOpenAI(temperature=0.3, model="gpt-4-turbo", streaming=True)
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain.docstore.document import Document
 
-# # FIRECRAWL SCRAPE
+
+# # Firecrawl Scrape
 # from langchain_community.document_loaders import FireCrawlLoader
 # urls = []
 # docs = [FireCrawlLoader(api_key="xxxxx", url=url, mode="scrape").load() for url in urls]
@@ -81,18 +81,29 @@ from langchain.docstore.document import Document
 #         doc = Document(page_content=f.read())
 #         doc_list.append(doc)
 
-# # Read NHSmed documents json to an array of docs
-import json
+# # Read medication documents json to an array of docs
+import json, os
+from langchain.docstore.document import Document
 
-file_name = f"backend/testdata/NHSmed/documents.json"
+folder = "backend/testdata/NHSmed"
 doc_list = []
-with open(file_name, 'r') as json_file:
-    dict = json.load(json_file)
-    for object in dict.values():
-        obj = json.loads(object)
-        doc = Document(**obj)
-        doc_list.append(doc)
-    print("Loaded NHSmed JSON")
+for filename in os.listdir(folder):
+  # Check if file is a JSON file
+  if filename.endswith(".json") and filename != "medication_table.json":
+    file_path = os.path.join(folder, filename)
+    try:
+      with open(file_path, 'r') as json_file:
+        dict = json.load(json_file)
+        for obj in dict.values():
+          obj = json.loads(obj)
+          doc = Document(**obj)
+          doc_list.append(doc)
+      print(f"Loaded Medication: {filename}")  # Print success message with filename
+    except FileNotFoundError:
+      print(f"Error: Medication file not found: {filename}")  # Print error message
+    except json.JSONDecodeError:
+      print(f"Error: Invalid JSON format in medication file: {filename}")  # Print error message for invalid JSON
+
 
 #Split docs into chunks using tiktoken
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
