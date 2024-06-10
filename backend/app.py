@@ -84,7 +84,6 @@ from langchain_community.vectorstores import Chroma
 # # Read medication documents json to an array of docs
 import json, os
 from langchain.docstore.document import Document
-
 folder = "backend/testdata/NHSmed"
 doc_list = []
 for filename in os.listdir(folder):
@@ -140,6 +139,7 @@ hf = HuggingFaceEmbeddings(
 # feat: rebuild vectorDB on source file change
 if os.path.exists("./chroma_db"):
     vectorstore = Chroma(persist_directory="./chroma_db", collection_name="rag-chroma", embedding_function=hf,)
+    print("Vector database loaded")
 else:
 #Add to vectorDB, with persistent file
     vectorstore = Chroma.from_documents(
@@ -201,7 +201,6 @@ from langgraph.prebuilt import tools_condition
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 
-
 #############
 ### EDGES####
 #############
@@ -248,8 +247,9 @@ def grade_documents(state) -> Literal["generate", "agent"]:
     messages = state["messages"]
     last_message = messages[-1]
 
-    question = messages[0].content
+    question = messages[-3].content # uses reworded question
     docs = last_message.content
+    print(f"Question: {question}")
 
     scored_result = chain.invoke({"question": question, "context": docs})
 
@@ -261,7 +261,6 @@ def grade_documents(state) -> Literal["generate", "agent"]:
 
     else:
         print("---DECISION: DOCS NOT RELEVANT---")
-        print(score)
         return "agent"
 
 ############
@@ -308,12 +307,13 @@ def rewrite(state):
     msg = [
         HumanMessage(
             content=f""" \n 
-    Look at the input and try to reason about the underlying semantic intent / meaning. Pay particular attention to any key medical terms \n 
+    Look at the question and try to reason about the underlying semantic intent / meaning. Pay particular attention to any key medical terms \n 
     Here is the initial question:
     \n ------- \n
     {question} 
     \n ------- \n
-    Formulate an improved question to search medical documents: """,
+    Correct any spelling errors in medication names and formulate an improved question for searching medical information.
+    Only respond with the reworded question, with no other preamble or conversation: """,
         )
     ]
 
@@ -335,16 +335,16 @@ def generate(state):
     """
     print("---GENERATE---")
     messages = state["messages"]
-    question = messages[0].content
     last_message = messages[-1]
 
-    question = messages[0].content
+    question = messages[-3].content # uses reworded question
     docs = last_message.content
+    print(f"generate - question: {question}. docs: {docs}")
 
     # Prompt 
     prompt = ChatPromptTemplate.from_messages([
         ("human", """You are an assistant for answering questions about medications.
-         Use the following pieces of retrieved context to answer the question.
+         Use the following pieces of retrieved context to comprehensively answer the question.
          If you don't know the answer, just say that you are unable to answer with the information available.
          Question: {question}
          Context: {context}
