@@ -18,35 +18,40 @@ base_params = {
 if "DATE_LAST_RUN" in os.environ:
     DATE_LAST_RUN = os.environ["DATE_LAST_RUN"]
     
-# # Initial grab - all medication API urls and date modified
-# medication_table = {"data": []}
-# # DATE_LAST_RUN not set:
-# if "DATE_LAST_RUN" not in dir():
-#     # Grab in alphabetical order
-#     for letter in list(string.ascii_uppercase):
-#         try:
-#             base_params["category"] = letter
-#             response = requests.get(base_url, params=base_params)
-#             response.raise_for_status()  # Raise an exception for non-2xx status codes
-#             results = response.json()
-#             for object in results["significantLink"]:
-#                 name, url, dateModified = object["name"], object["url"], object["mainEntityOfPage"]["dateModified"]
-#                 medication_table["data"].append({"name": name, "url": url, "dateModified": dateModified})
-#                 print(f"Drug: {name}, URL: {url}, Date Modified: {dateModified}")
-#         except requests.exceptions.RequestException as e:
-#             print(f"Error occurred while fetching medication list: {e}")
-#         except ValueError as e:
-#             print(f"Error occurred while parsing JSON response for medication list: {e}")
-#         except Exception as e:
-#             print(f"An unexpected error occurred for API request to medication list: {e}")
-#         # wait as trial subscription rate limit 10/min
-#         time.sleep(7)
-#     # save as JSON
-#     with open('backend/testdata/NHSmed/medication_table.json', 'w', encoding='utf-8') as json_file:
-#         json.dump(medication_table, json_file, ensure_ascii=False, indent=4)
-# else:
-#     # feat: add header "orderBy: dateModified" and only grab recently updated links
-#     print(f"Script run on {DATE_LAST_RUN}. Only updating pages after this date")
+# Initial grab - all medication API urls and date modified
+medication_table = {"data": []}
+prev_page_medication = ""
+# DATE_LAST_RUN not set:
+if "DATE_LAST_RUN" not in dir():
+    # Grab in page order
+    for page in range(1,100):
+        try:
+            base_params["page"] = page
+            response = requests.get(base_url, params=base_params)
+            response.raise_for_status()  # Raise an exception for non-2xx status codes
+            results = response.json()
+            # end loop if last med matches prev page
+            if prev_page_medication == results["significantLink"][-1]["name"]:
+                break
+            for object in results["significantLink"]:
+                name, url, dateModified = object["name"], object["url"], object["mainEntityOfPage"]["dateModified"]
+                medication_table["data"].append({"name": name, "url": url, "dateModified": dateModified})
+                print(f"Drug: {name}, URL: {url}, Date Modified: {dateModified}")
+                prev_page_medication = name
+        except requests.exceptions.RequestException as e:
+            print(f"Error occurred while fetching medication list: {e}")
+        except ValueError as e:
+            print(f"Error occurred while parsing JSON response for medication list: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred for API request to medication list: {e}")
+        # wait as trial subscription rate limit 10/min
+        time.sleep(7)
+    # save as JSON
+    with open('backend/testdata/NHSmed/medication_table.json', 'w', encoding='utf-8') as json_file:
+        json.dump(medication_table, json_file, ensure_ascii=False, indent=4)
+else:
+    # feat: add header "orderBy: dateModified" and only grab recently updated links
+    print(f"Script run on {DATE_LAST_RUN}. Only updating pages after this date")
 
 # Load medication table JSON
 with open('backend/testdata/NHSmed/medication_table.json', 'r', encoding='utf-8') as json_file:

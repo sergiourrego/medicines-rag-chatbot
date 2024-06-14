@@ -117,6 +117,7 @@ In the `.env` file please also set the `LANGCHAIN_API_KEY` for LangTrace tracing
 
 ## Links
 * NHS Medicines API Documentation: https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b
+* NHS Developer Community: https://developer.community.nhs.uk/
 * NHS Website Syndicated Content Standard License Terms: https://developer.api.nhs.uk/about/terms/latest
 * Much thanks to this excellent guide by AI Jason that was integral in developing this project: https://www.youtube.com/watch?v=u5Vcrwpzoz8
 
