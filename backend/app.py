@@ -11,24 +11,29 @@ import pprint
 
 @app.route('/messages', methods=['POST'])
 def simple_message():
-  # JSON of whole conversation
+  # Receives JSON
     # {
-    #     "messages": [
-    #         {role: user, content: message},
-    #     ]
+    #     "input": {
+    #         "messages": [
+    #             {"role": "user","content": "question"}
+    #         ]
+    #     },
+    #     "urls" : []
     # }
   data = request.get_json()  # Access the JSON data from the request body
-  inputs = data
-  for output in graph.stream(inputs):
+  input = data["input"]
+  urls = None
+  for output in graph.stream(input):
     for key, value in output.items():
         # pprint.pprint(f"Output from node '{key}':")
         # pprint.pprint("---")
         # pprint.pprint(value, indent=2, width=80, depth=None)
         if key == "generate":
-            message = value["messages"][0].content
-            urls = value[""]
+            urls = [doc.metadata["url"] for doc in value["documents"]]
+        message = value["messages"][0].content
     pprint.pprint("\n---\n")
-  data["messages"].append({"role": "assistant", "content": message})
+  data["input"]["messages"].append({"role": "assistant", "content": message})
+  data["urls"].append(urls)
   return data
   
 # LANGTRACE API
@@ -196,6 +201,7 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     rewrite_question: BaseMessage # store, not append, the reworded question for access without indexing
     documents: List[Document] # same for retrieved documents
+    # failed: int # default failed, updated by grader
         
 from typing import Annotated, Literal, Sequence, TypedDict
 
@@ -304,16 +310,18 @@ def retrieve(state):
     metadata_field_info = [
         AttributeInfo(
             name="med_name",
-            description="Name of the medication. If a common brand name exists it may be in brackets after']",
-            type="string",
+            description="Name of the medication. If a common brand name exists it may be in brackets after",
+            type="string"
         ),
         AttributeInfo(
             name="document_description", 
-            description="The specific topics about the medication", type="string"
+            description="The specific topics about the medication",
+            type="string"
         ),
         AttributeInfo(
             name="page_description", 
-            description="What conditions the medication is used to treat. May contain alternated brand names", type="string"
+            description="What conditions the medication is used to treat. May contain alternated brand names",
+            type="string"
         ),
     ]
     document_content_description = "Information about a specific medication"
@@ -492,7 +500,6 @@ def rank_documents(state):
     
     question = state["rewrite_question"]
     documents = state["documents"]
-    failed = state["failed"]
     messages = state["messages"]
     # Use FlashrankRerank to rank and return top n relevant documents
     reranker = FlashrankRerank(top_n=4)
@@ -500,7 +507,7 @@ def rank_documents(state):
 
     print(f"\n Returning top {len(reranked_docs)} out of {len(documents)} Documents \n")
 
-    return {"documents": reranked_docs, "rewrite_question": question, "failed": failed, "messages": messages}
+    return {"documents": reranked_docs, "rewrite_question": question, "messages": messages}
 
 
 def generate(state):
