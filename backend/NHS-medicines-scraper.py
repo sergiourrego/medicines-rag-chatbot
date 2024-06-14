@@ -63,7 +63,7 @@ for med in medication_table["data"]:
         results = response.json()
         # Assign results to variable
         name, description, url = results['name'],  results['description'], results['url']
-        # deconstruct array
+        # alternate names are not consistently listed here
         alternateName = results['about']['alternateName']
         alternateName = " ".join(alternateName)
         # page headings +- alternateName
@@ -122,7 +122,7 @@ for med in medication_table["data"]:
                     "url": suburl,
                     "alternate_names": alternateName,
                     "page_description": description,
-                    "document_description" : titlefromurl
+                    "document_description" : titlefromurl,
                 }
             )
             # add section doc to JSON

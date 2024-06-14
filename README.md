@@ -111,9 +111,9 @@ Here's an overview of the API structure:
 
 To run this project, you'll need the following Python libraries:
 
-```pip install -U flask langchain-nomic langchain_community tiktoken langchainhub chromadb langchain langgraph markdownify```
+```pip install -U flask langchain-nomic langchain_community tiktoken langchainhub chromadb langchain langgraph markdownify flashrank lark```
 
-In the `.env` file please also set the `LANGCHAIN_API_KEY` for tracing and `NHS_API_KEY` for the scraper.
+In the `.env` file please also set the `LANGCHAIN_API_KEY` for LangTrace tracing and `NHS_API_KEY` for the scraper.
 
 ## Links
 * NHS Medicines API Documentation: https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b
