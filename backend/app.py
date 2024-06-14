@@ -24,7 +24,6 @@ def simple_message():
         # pprint.pprint(f"Output from node '{key}':")
         # pprint.pprint("---")
         # pprint.pprint(value, indent=2, width=80, depth=None)
-        # LangChain returns custom AIMessage object, parse with dumps
         message = value["messages"][0].content
     pprint.pprint("\n---\n")
   data["messages"].append({"role": "assistant", "content": message})
