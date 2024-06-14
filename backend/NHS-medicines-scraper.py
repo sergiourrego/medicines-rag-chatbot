@@ -154,7 +154,7 @@ def get_all_medications(medication_table):
         # timeout
         time.sleep(7) 
 
-# get_medication_list()
+get_medication_list()
 medication_table = load_med_list
 get_all_medications(medication_table)
 

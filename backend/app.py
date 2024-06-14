@@ -24,7 +24,9 @@ def simple_message():
         # pprint.pprint(f"Output from node '{key}':")
         # pprint.pprint("---")
         # pprint.pprint(value, indent=2, width=80, depth=None)
-        message = value["messages"][0].content
+        if key == "generate":
+            message = value["messages"][0].content
+            urls = value[""]
     pprint.pprint("\n---\n")
   data["messages"].append({"role": "assistant", "content": message})
   return data
@@ -194,7 +196,6 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     rewrite_question: BaseMessage # store, not append, the reworded question for access without indexing
     documents: List[Document] # same for retrieved documents
-    failed: int # fail by default, update to 0 when any relevant docs found
         
 from typing import Annotated, Literal, Sequence, TypedDict
 
@@ -208,62 +209,6 @@ from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 #############
 ### EDGES####
 #############
-
-
-# def grade_documents(state) -> Literal["generate", "reject"]:
-#     """
-#     Determines whether the retrieved documents are relevant to the question.
-
-#     Args:
-#         state (messages): The current state
-
-#     Returns:
-#         str: A decision for whether the documents are relevant or not
-#     """
-
-#     print("---CHECK RELEVANCE---")
-
-#     # Data model
-#     class grade(BaseModel):
-#         """Binary score for relevance check."""
-
-#         binary_score: str = Field(description="Relevance score 'yes' or 'no'")
-
-#     # LLM
-#     model = local_llm
-
-#     # LLM with tool and validation
-#     llm_with_tool = model.with_structured_output(grade)
-
-#     # Prompt
-#     prompt = PromptTemplate(
-#         template="""You are a grader assessing relevance of a retrieved document to a user question. \n 
-#         If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-#         Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
-#         Here is the retrieved document: \n\n {context} \n\n
-#         Here is the user question: {question} \n
-#         """,
-#         input_variables=["context", "question"],
-#     )
-
-#     # Chain
-#     chain = prompt | llm_with_tool
-
-#     messages = state["messages"]
-#     last_message = messages[-1]
-#     docs = last_message.content
-#     question = state['rewrite_question']
-
-#     scored_result = chain.invoke({"question": question, "context": docs})
-#     score = scored_result.binary_score
-#     print(f"Question: {question} \n \n Docs: {docs} \n \n Score: {score}")
-#     if score == "yes":
-#         print("---DECISION: DOCS RELEVANT---")
-#         return "generate"
-
-#     else:
-#         print("---DECISION: DOCS NOT RELEVANT---")
-#         return "reject"
     
 def verify_question(state) -> Literal["rewrite", "reject"]:
     """
@@ -316,32 +261,6 @@ def verify_question(state) -> Literal["rewrite", "reject"]:
     else:
         print("---DECISION: QUESTION NOT RELEVANT---")
         return "reject"
-    
-def decide_to_generate(state):
-    """
-    Determines whether to generate an answer, or reject if no relevant documents
-
-    Args:
-        state (dict): The current graph state
-
-    Returns:
-        str: Binary decision for next node to call
-    """
-
-    print("---ASSESS GRADED DOCUMENTS---")
-    failed = state["failed"]
-
-    if failed == 0:
-        # Some relevant documents have been graded
-        print(
-            "---DECISION: RELEVANT DOCUMENTS FOUND---"
-        )
-        return "generate"
-    else:
-        # We have relevant documents, so generate answer
-        print("---DECISION: NO RELEVANT DOCUMENTS: REJECT---")
-        return "reject"
-
 
 ############
 ### NODES ##
