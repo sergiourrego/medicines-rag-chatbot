@@ -115,8 +115,8 @@ for filename in os.listdir(folder):
 #Split docs into chunks using tiktoken
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     #EXPERIMENT WITH CHUNK SIZE
-    chunk_size=256, 
-    chunk_overlap=0,
+    chunk_size=512, 
+    chunk_overlap=64,
 )
 doc_splits = text_splitter.split_documents(doc_list)
 print("Split Documents")
@@ -536,6 +536,7 @@ def generate(state):
     prompt = ChatPromptTemplate.from_messages([
         ("human", """You are an assistant for answering questions about medications.
          Rely heavily on the following pieces of retrieved context to answer the question.
+         In your response do not use the phrase "in the provided context", instead say "on the NHS website"
          If you don't know the answer, just say that you are unable to find any specific information from the NHS Medicines website, but offer adjacent relevant advice from the provided context.
          Question: {question}
          Context: {context}
