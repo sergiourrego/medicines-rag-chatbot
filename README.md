@@ -37,7 +37,7 @@ The text from the NHS Medicines API is converted into **Markdown** and stored al
 
 ### Retrieval
 #### Guardrails (verify)
-The `verify` node act as a straightforward guardrail, rejecting questions that are inappropriate given the chatbot's purpose and preventing unnecessary retrieval.
+The `verify` edge act as a straightforward guardrail, rejecting questions that are inappropriate given the chatbot's purpose and preventing unnecessary retrieval. The `reject` node will then give a polite response and redirect to appropriate resources.
 
 #### Query Translation (rewrite)
 The `rewrite` node translates the query into a clearer version, correcting spelling errors and adding
