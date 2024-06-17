@@ -71,7 +71,7 @@ function App() {
     <div className='flex flex-col h-screen'>
       <div className='navbar flex-row border-y-2 h-1/6'>
         <h1 className="m-4 w-2/3 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"><span className="text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">NHS Medicines Chatbot</span></h1>
-        <p className="m-4 p-2 text-xl font-normal text-gray-500 lg:text-xl dark:text-gray-400">Ask questions about medicines and I'll answer using NHS guidance for patients<br></br><br></br>I'll also provide direct links to sources</p>
+        <p className="m-4 p-2 text-xl font-normal text-gray-500 lg:text-xl dark:text-gray-400">Ask questions about medicines and I will answer using NHS guidance for patients<br></br><br></br>I will also provide direct links to sources</p>
       </div>
       <div className="flex flex-row h-5/6 bg-slate-200">
         <div className='flex-col w-2/3'>

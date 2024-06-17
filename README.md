@@ -1,23 +1,18 @@
-## RAG Chatbot for NHS Medicines
+# RAG Chatbot for NHS Medicines
 
-This project is a personal exploration of agentic Retrieval Augmented Generation models and their potential for interacting with verified information sources. It utilizes the OpenAI API, LangChain, and LangGraph to query a vector database built from the freely accessible NHS Medicines API.
+This chatbot allows to you to talk to the NHS Medicines A-Z, a site containing information for patients about common medicines. It will answer only based on this information and provide direct links to the pages or even the paragraphs used.
 
-While standard RAG excels at simple queries across a few documents, agentic RAG takes it a step further and emerges as a potent solution for question answering. It introduces a layer of intelligence by employing AI agents. These agents act as autonomous decision-makers, rewording the initial prompt to ensure efficient retrieval search, verifying the retrieved documents relevance to the question and strategically selecting the next course of action.
+This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) models and their potential for interacting reliably with verified information sources. It utilizes the OpenAI API, LangChain, Chroma and LangGraph to query a vector database built from the freely accessible [NHS Medicines API](https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b). While conventional RAG is effective for simple queries, this solution uses multiple agents working in concert to drastically improve the retrieval search and filter out irrelevant context.
+
+
 
 **Important Disclaimer:**
 
 * This is a personal project for educational and testing purposes only. 
-* It is **not** affiliated with or endorsed by any NHS organization.
-* It does not currently adhere to the requirements for using NHS website syndicated content in a product, such as providing direct URLs to the content utilised in the search. This featuer is planned for future development.
-* In addition the chatbot has not undergone regulation as a medical device and therefore should not be hosted and made accessible to the public.
+* It is **not** developed in collaboration with any NHS organization.
+* Regulation as a medical device has not been explored yet and therefore the chatbot should not be hosted and made accessible to the public.
 
-**Functionality:**
-
-This chatbot allows users to interact with information about common medicines based on the official NHS patient advice. It utilizes the NHS Medicines API to retrieve relevant data, convert it into LangChain Documents and then chunk and store the data in a vector database, ready for semantic search.
-
-When you ask the chatbot a question it will retrieve relevant documents and use the content to provide an informed answer
-
-**Technologies:**
+## Technologies
 
 * Backend
     * Python
@@ -32,9 +27,33 @@ When you ask the chatbot a question it will retrieve relevant documents and use 
     * TailwindCSS
     * DaisyUI
 
-**API Scraping**
+## Optimising the RAG
 
-NHS-medicines-scraper.py interacts with the NHS Medicines API to create Markdown files and Documents on all available medicines. You will require a subscription key - free trial subscription is available.
+### Pre-Retrieval
+The text from the NHS Medicines API is converted into **Markdown** and stored alongside the JSON metadata in **LangChain Documents**. LLMs are fine-tuned on Markdown text so it is the most effective format for 'consumption' by LLMs. The metadata will allow us to augment our search using keywords later, as well as display URLs to users.
+
+`chunk_size=512, chunk_overlap=64` ensures that the majority of paragraphs are preserved as entire units of information to preserve context and improve semantic retrieval. Larger paragraphs retain leading information due to the overlap.
+
+### Retrieval
+#### Guardrails (verify)
+The `verify` node act as a straightforward guardrail, rejecting questions that are inappropriate given the chatbot's purpose and preventing unnecessary retrieval.
+
+#### Query Translation (rewrite)
+The `rewrite` node translates the query into a clearer version, correcting spelling errors and adding
+generic names for medications, increasing efficiency of retrieval.
+
+#### Query Expansion (retrieve)
+Query expansion creates N versions of the query from alternate perspectives, then performs a seperate search for each to maximise the embedding area. This results in more relevant chunks being retrieved.
+
+#### Self Query/Hybrid Retrieval (retrieve)
+Self Query extracts metadata search queries from the original query. A search is then done using a hybrid of semantic similarity and keyword similarity (using the metadata query). With organised data like this, we can effectively find relevant chunks that would otherwise be missed.
+
+### Post Retrieval
+The `rerank` node uses `FlashRank` to rerank our retrieved chunks, returning only the top N most relevant ones. This reduces noises from irrelevant context, reduces prompt size, and helps prevent the "lost in the middle" problem.
+
+## API Scraping
+
+NHS-medicines-scraper.py calls the NHS Medicines API to create Markdown files and Documents on all available medicines. A new version of the API has been released so the current scraper is outdated.
 
 Here's an overview of the API structure:
 
@@ -107,19 +126,40 @@ Here's an overview of the API structure:
   ]
 }
 ```
-## Requirements:
+## Running a Test Environment:
+
+Clone this repo.
 
 To run this project, you'll need the following Python libraries:
 
 ```pip install -U flask langchain-nomic langchain_community tiktoken langchainhub chromadb langchain langgraph markdownify flashrank lark```
 
-In the `.env` file please also set the `LANGCHAIN_API_KEY` for LangTrace tracing and `NHS_API_KEY` for the scraper.
+In `.env` set the `LANGCHAIN_API_KEY` for LangTrace tracing and `NHS_API_KEY` for the scraper.
+
+Using CUDA with local GPU is recommended for running the local embedding model. Fully local LLM is planned for future development.
+
+### Backend
+```
+cd backend
+
+# Scrape the pages for all medications
+NHS-medicines-scraper.py
+
+# Run Flask app
+app.py
+```
+
+### Frontend
+```
+cd frontend
+npm run dev
+```
 
 ## Links
 * NHS Medicines API Documentation: https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b
 * NHS Developer Community: https://developer.community.nhs.uk/
 * NHS Website Syndicated Content Standard License Terms: https://developer.api.nhs.uk/about/terms/latest
-* Much thanks to this excellent guide by AI Jason that was integral in developing this project: https://www.youtube.com/watch?v=u5Vcrwpzoz8
+* Thanks to this excellent guide that was integral in developing this project: https://github.com/langchain-ai/langgraph/blob/main/examples/rag/langgraph_agentic_rag.ipynb
 
 ## Getting Involved
 If this project interests you and you'd like to get involved please email me at shyamdhokia123@hotmail.co.uk
