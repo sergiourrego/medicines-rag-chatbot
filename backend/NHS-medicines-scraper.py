@@ -1,12 +1,15 @@
 import sys, os, time, requests, markdownify, re, json
 from langchain.docstore.document import Document
+from dotenv import load_dotenv
+load_dotenv()
 
 # Check for API Key
 if "NHS_API_KEY" in os.environ:
     NHS_API_KEY = os.environ["NHS_API_KEY"]
+    print("NHS API Key Loaded")
 else:
-    print("NHS API Key missing from .env")
-    sys.exit
+    print("NHS API Key Missing from .env")
+    sys.exit()
     
 base_url = "https://api.nhs.uk/medicines"
 base_params = {
@@ -47,7 +50,7 @@ def get_medication_list():
             # wait as trial subscription rate limit 10/min
             time.sleep(7)
         # save as JSON
-        with open('backend/testdata/NHSmed/medication_table.json', 'w', encoding='utf-8') as json_file:
+        with open('testdata/NHSmed/medication_table.json', 'w', encoding='utf-8') as json_file:
             json.dump(medication_table, json_file, ensure_ascii=False, indent=4)
     else:
         # feat: add header "orderBy: dateModified" and only grab recently updated links
@@ -55,7 +58,7 @@ def get_medication_list():
         
 # Load medication table JSON
 def load_med_list():
-    with open('backend/testdata/NHSmed/medication_table.json', 'r', encoding='utf-8') as json_file:
+    with open('testdata/NHSmed/medication_table.json', 'r', encoding='utf-8') as json_file:
         medication_table = json.load(json_file)
     return medication_table
 
@@ -79,7 +82,7 @@ def get_all_medications(medication_table):
             else:
                 whole_page = f"# {name} ({alternateName})\n\n## {description}\n\n"
             # create Document json for medication
-            file_name = f"backend/testdata/NHSmed/{name}.json"
+            file_name = f"testdata/NHSmed/{name}.json"
             documentjson = {}  # Empty dic if the file doesn't exist
             # Collate all text, converted to md in page_content
             for section in results['hasPart']:
@@ -136,7 +139,7 @@ def get_all_medications(medication_table):
                 documentjson[titlefromurl] = doc.json()
                 print(f"Document created for {name} - {titlefromurl}")
             # Save to md
-            mdname = f"backend/testdata/NHSmed/{name}.md"
+            mdname = f"testdata/NHSmed/{name}.md"
             with open(mdname, 'w', encoding='utf-8') as md_file:
                 md_file.write(whole_page)
                 print(f"Markdown created for {name}")
@@ -159,7 +162,7 @@ medication_table = load_med_list
 get_all_medications(medication_table)
 
 # # Read to array of docs
-# file_name = f"backend/testdata/NHSmed/documents.json"
+# file_name = f"testdata/NHSmed/documents.json"
 # docarray = []
 # with open(file_name, 'r') as json_file:
 #     dict = json.load(json_file)

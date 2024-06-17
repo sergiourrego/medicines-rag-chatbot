@@ -78,11 +78,11 @@ from langchain_community.vectorstores import Chroma
 # TEST: read md files
 # Loop through all files in the directory
 # doc_list = []
-# for filename in os.listdir("backend/testdata"):
+# for filename in os.listdir("testdata"):
 #   # Check if the file is a markdown file (ends with .md)
 #   if filename.endswith(".md"):
 #     # Construct the full path to the file
-#     file_path = os.path.join("backend/testdata", filename)
+#     file_path = os.path.join("testdata", filename)
 #     # Open the file in read mode
 #     with open(file_path, "r") as f:
 #     # Read the file content into a Document then append to doc_list array
@@ -92,7 +92,7 @@ from langchain_community.vectorstores import Chroma
 # # Read medication documents json to an array of docs
 import json, os
 from langchain.docstore.document import Document
-folder = "backend/testdata/NHSmed"
+folder = "testdata/NHSmed"
 doc_list = []
 for filename in os.listdir(folder):
   # Check if file is a JSON file
