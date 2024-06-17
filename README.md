@@ -47,7 +47,7 @@ generic names for medications, increasing efficiency of retrieval.
 Query expansion creates N versions of the query from alternate perspectives, then performs a seperate search for each to maximise the embedding area. This results in more relevant chunks being retrieved.
 
 #### Self Query/Hybrid Retrieval (retrieve)
-Self Query extracts metadata search queries from the original query. A search is then done using a hybrid of semantic similarity and keyword similarity (using the metadata query). With organised data like this, we can effectively find relevant chunks that would otherwise be missed.
+Self query extracts metadata search queries from the original query. A search is then done using a hybrid of semantic similarity and keyword similarity (using the metadata query). With organised data like this, we can effectively find relevant chunks that would otherwise be missed.
 
 ### Post Retrieval
 The `rerank` node uses `FlashRank` to rerank our retrieved chunks, returning only the top N most relevant ones. This reduces noises from irrelevant context, reduces prompt size, and helps prevent the "lost in the middle" problem.
