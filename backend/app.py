@@ -39,6 +39,8 @@ def simple_message():
 # LANGTRACE API
 
 import os, sys
+from dotenv import load_dotenv
+load_dotenv()
 
 # Set our LangChain API
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
