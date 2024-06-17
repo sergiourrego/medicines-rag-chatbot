@@ -4,7 +4,7 @@ This chatbot allows to you to talk to the NHS Medicines A-Z, a site containing i
 
 This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) models and their potential for interacting reliably with verified information sources. It utilizes the OpenAI API, LangChain, Chroma and LangGraph to query a vector database built from the freely accessible [NHS Medicines API](https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b). While conventional RAG is effective for simple queries, this solution uses multiple agents working in concert to drastically improve the retrieval search and filter out irrelevant context.
 
-
+![chatbot](https://github.com/shyamdhokia1/Medicines-RAG-ChatBot/assets/92919658/959818cb-cb4b-452f-a20d-5ce1b2dc0fe5)
 
 **Important Disclaimer:**
 
@@ -28,6 +28,7 @@ This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) m
     * DaisyUI
 
 ## Optimising the RAG
+![Task management](https://github.com/shyamdhokia1/Medicines-RAG-ChatBot/assets/92919658/2f5d60bb-6717-4e81-b9d8-f15dee001dcc)
 
 ### Pre-Retrieval
 The text from the NHS Medicines API is converted into **Markdown** and stored alongside the JSON metadata in **LangChain Documents**. LLMs are fine-tuned on Markdown text so it is the most effective format for 'consumption' by LLMs. The metadata will allow us to augment our search using keywords later, as well as display URLs to users.
