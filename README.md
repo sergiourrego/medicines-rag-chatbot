@@ -1,6 +1,6 @@
 # RAG Chatbot for NHS Medicines
 
-This chatbot allows to you to talk to the NHS Medicines A-Z, a site containing information for patients about common medicines. It will answer only based on this information and provide direct links to the pages or even the paragraphs used.
+This chatbot allows to you to talk to the [NHS Medicines A-Z](https://www.nhs.uk/medicines/), a site containing information for patients about common medicines. It will answer only based on this information and provide direct links to the pages or even the paragraphs used.
 
 This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) models and their potential for interacting reliably with verified information sources. It utilizes the OpenAI API, LangChain, Chroma and LangGraph to query a vector database built from the freely accessible [NHS Medicines API](https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b). While conventional RAG is effective for simple queries, this solution uses multiple agents working in concert to drastically improve the retrieval search and filter out irrelevant context.
 
