@@ -14,18 +14,19 @@ This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) m
 
 ## Technologies
 
-* Backend
+* **Backend**
     * Python
     * Flask
     * OpenAI API
     * LangChain
     * LangGraph
-    * Chroma
+    * ChromaDB
 
-* Frontend
+* **Frontend**
     * React.js
     * TailwindCSS
     * DaisyUI
+    * Vite
 
 ## Optimising the RAG
 ![Task management](https://github.com/shyamdhokia1/Medicines-RAG-ChatBot/assets/92919658/2f5d60bb-6717-4e81-b9d8-f15dee001dcc)
