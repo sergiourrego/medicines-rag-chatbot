@@ -1,10 +1,10 @@
 # RAG Chatbot for NHS Medicines
 
-This chatbot allows to you to talk to the NHS Medicines A-Z, a site containing information for patients about common medicines. It will answer only based on this information and provide direct links to the pages or even the paragraphs used.
+This chatbot allows to you to talk to the [NHS Medicines A-Z](https://www.nhs.uk/medicines/), a site containing information for patients about common medicines. It will answer only based on this information and provide direct links to the pages or even the paragraphs used.
 
 This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) models and their potential for interacting reliably with verified information sources. It utilizes the OpenAI API, LangChain, Chroma and LangGraph to query a vector database built from the freely accessible [NHS Medicines API](https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b). While conventional RAG is effective for simple queries, this solution uses multiple agents working in concert to drastically improve the retrieval search and filter out irrelevant context.
 
-
+![chatbot-narrow](https://github.com/shyamdhokia1/Medicines-RAG-ChatBot/assets/92919658/24b35203-6461-4328-944c-a253f9e7a7b8)
 
 **Important Disclaimer:**
 
@@ -14,20 +14,22 @@ This is a personal exploration of Agentic Retrieval Augmented Generation (RAG) m
 
 ## Technologies
 
-* Backend
+* **Backend**
     * Python
     * Flask
     * OpenAI API
     * LangChain
     * LangGraph
-    * Chroma
+    * ChromaDB
 
-* Frontend
+* **Frontend**
     * React.js
     * TailwindCSS
     * DaisyUI
+    * Vite
 
 ## Optimising the RAG
+![Task management](https://github.com/shyamdhokia1/Medicines-RAG-ChatBot/assets/92919658/2f5d60bb-6717-4e81-b9d8-f15dee001dcc)
 
 ### Pre-Retrieval
 The text from the NHS Medicines API is converted into **Markdown** and stored alongside the JSON metadata in **LangChain Documents**. LLMs are fine-tuned on Markdown text so it is the most effective format for 'consumption' by LLMs. The metadata will allow us to augment our search using keywords later, as well as display URLs to users.
@@ -36,7 +38,7 @@ The text from the NHS Medicines API is converted into **Markdown** and stored al
 
 ### Retrieval
 #### Guardrails (verify)
-The `verify` node act as a straightforward guardrail, rejecting questions that are inappropriate given the chatbot's purpose and preventing unnecessary retrieval.
+The `verify` edge act as a straightforward guardrail, rejecting questions that are inappropriate given the chatbot's purpose and preventing unnecessary retrieval. The `reject` node will then give a polite response and redirect to appropriate resources.
 
 #### Query Translation (rewrite)
 The `rewrite` node translates the query into a clearer version, correcting spelling errors and adding
@@ -46,7 +48,7 @@ generic names for medications, increasing efficiency of retrieval.
 Query expansion creates N versions of the query from alternate perspectives, then performs a seperate search for each to maximise the embedding area. This results in more relevant chunks being retrieved.
 
 #### Self Query/Hybrid Retrieval (retrieve)
-Self Query extracts metadata search queries from the original query. A search is then done using a hybrid of semantic similarity and keyword similarity (using the metadata query). With organised data like this, we can effectively find relevant chunks that would otherwise be missed.
+Self query extracts metadata search queries from the original query. A search is then done using a hybrid of semantic similarity and keyword similarity (using the metadata query). With organised data like this, we can effectively find relevant chunks that would otherwise be missed.
 
 ### Post Retrieval
 The `rerank` node uses `FlashRank` to rerank our retrieved chunks, returning only the top N most relevant ones. This reduces noises from irrelevant context, reduces prompt size, and helps prevent the "lost in the middle" problem.
