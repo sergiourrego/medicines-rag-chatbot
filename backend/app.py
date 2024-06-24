@@ -6,20 +6,21 @@ from flask import Flask, request
 app = Flask(__name__)
 
 # POST method for chat messages
-from langchain.load.dump import dumps
 import pprint
 
 @app.route('/messages', methods=['POST'])
 def simple_message():
-  # Receives JSON
-    # {
-    #     "input": {
-    #         "messages": [
-    #             {"role": "user","content": "question"}
-    #         ]
-    #     },
-    #     "urls" : []
-    # }
+  """
+    Receives JSON
+    {
+        "input": {
+            "messages": [
+                {"role": "user","content": "question"}
+            ]
+        },
+        "urls" : []
+    }
+  """
   data = request.get_json()  # Access the JSON data from the request body
   input = data["input"]
   urls = None
@@ -35,153 +36,98 @@ def simple_message():
   data["input"]["messages"].append({"role": "assistant", "content": message})
   data["urls"].append(urls)
   return data
-  
-# LANGTRACE API
 
-import os, sys
+#############################
+### Setup LLM and VectorDB ##
+#############################
+
+import os
+import sys
+import json
 from dotenv import load_dotenv
-load_dotenv()
-
-# Set our LangChain API
-os.environ['LANGCHAIN_TRACING_V2'] = 'true'
-os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
-# Check for API Key
-if "LANGCHAIN_API_KEY" in os.environ:
-    LANGCHAIN_API_KEY = os.environ["LANGCHAIN_API_KEY"]
-else:
-    print("LANGCHAIN API Key missing from .env")
-    sys.exit
-    
-##################
-# SELECT OUR MODEL
-##################
-
-# from langchain_community.chat_models import ChatOllama
-# from langchain_experimental.llms.ollama_functions import OllamaFunctions
-
-# local_llm = OllamaFunctions(model="llama3", streaming=True, temperature=0)
 from langchain_openai import ChatOpenAI
-local_llm = ChatOpenAI(temperature=0, model="gpt-4-turbo", streaming=True)
-
-
-########################
-# CREATE VECTOR DATABASE
-########################
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-
-
-# # Firecrawl Scrape
-# from langchain_community.document_loaders import FireCrawlLoader
-# urls = []
-# docs = [FireCrawlLoader(api_key="xxxxx", url=url, mode="scrape").load() for url in urls]
-
-# TEST: read md files
-# Loop through all files in the directory
-# doc_list = []
-# for filename in os.listdir("testdata"):
-#   # Check if the file is a markdown file (ends with .md)
-#   if filename.endswith(".md"):
-#     # Construct the full path to the file
-#     file_path = os.path.join("testdata", filename)
-#     # Open the file in read mode
-#     with open(file_path, "r") as f:
-#     # Read the file content into a Document then append to doc_list array
-#         doc = Document(page_content=f.read())
-#         doc_list.append(doc)
-
-# # Read medication documents json to an array of docs
-import json, os
 from langchain.docstore.document import Document
-folder = "testdata/NHSmed"
-doc_list = []
-for filename in os.listdir(folder):
-  # Check if file is a JSON file
-  if filename.endswith(".json") and filename != "medication_table.json":
-    file_path = os.path.join(folder, filename)
-    try:
-      with open(file_path, 'r') as json_file:
-        dict = json.load(json_file)
-        for obj in dict.values():
-          obj = json.loads(obj)
-          doc = Document(**obj)
-          doc_list.append(doc)
-      print(f"Loaded Medication: {filename}")  # Print success message with filename
-    except FileNotFoundError:
-      print(f"Error: Medication file not found: {filename}")  # Print error message
-    except json.JSONDecodeError:
-      print(f"Error: Invalid JSON format in medication file: {filename}")  # Print error message for invalid JSON
-
-
-#Split docs into chunks using tiktoken
-text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    #EXPERIMENT WITH CHUNK SIZE
-    chunk_size=512, 
-    chunk_overlap=64,
-)
-doc_splits = text_splitter.split_documents(doc_list)
-print("Split Documents")
-
-# # Filter out complex metadata and ensure proper document formatting
-# from langchain_community.vectorstores.utils import filter_complex_metadata
-
-# filtered_docs = []
-# for doc in doc_splits:
-#     if isinstance(doc, Document) and hasattr(doc, 'metadata'):
-#         clean_metadata = {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
-#         filtered_docs.append(Document(page_content=doc.page_content, metadata=clean_metadata))
-
-# Configure embedder
-# from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-# import torch
-# print(torch.cuda.is_available())
+  
+class InitialiseRAG:
+    def __init__(self):
+        self.setup_environment()
+        self.local_llm = self.setup_llm()
+        self.vectorstore = None
+        self.retriever = None
 
-model_name = "Alibaba-NLP/gte-large-en-v1.5"
-model_kwargs = {'device': 'cuda', "trust_remote_code": True}
-hf = HuggingFaceEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-)
+    def setup_environment(self):
+        load_dotenv()
+        os.environ['LANGCHAIN_TRACING_V2'] = 'true'
+        os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
+        if "LANGCHAIN_API_KEY" not in os.environ:
+            print("LANGCHAIN API Key missing from .env")
+            sys.exit(1)
 
-# if vectorDB exists load it
-# feat: rebuild vectorDB on source file change
-if os.path.exists("./chroma_db"):
-    vectorstore = Chroma(persist_directory="./chroma_db", collection_name="rag-chroma", embedding_function=hf,)
-    print("Vector database loaded")
-else:
-#Add to vectorDB, with persistent file
-    vectorstore = Chroma.from_documents(
-        documents=doc_splits,
-        collection_name="rag-chroma",
-        embedding=hf,
-        persist_directory="./chroma_db",
-    )
-    # persist db
-    vectorstore.persist()
-    print("Vector database created")
+    def setup_llm(self):
+        return ChatOpenAI(temperature=0, model="gpt-4-turbo", streaming=True)
 
-###########
-# RETRIEVER
-###########
+    def load_documents(self, folder):
+        doc_list = []
+        for filename in os.listdir(folder):
+            if filename.endswith(".json") and filename != "medication_table.json":
+                file_path = os.path.join(folder, filename)
+                try:
+                    with open(file_path, 'r') as json_file:
+                        dict = json.load(json_file)
+                        for obj in dict.values():
+                            obj = json.loads(obj)
+                            doc = Document(**obj)
+                            doc_list.append(doc)
+                    print(f"Loaded Medication: {filename}")
+                except FileNotFoundError:
+                    print(f"Error: Medication file not found: {filename}")
+                except json.JSONDecodeError:
+                    print(f"Error: Invalid JSON format in medication file: {filename}")
+        return doc_list
 
-retriever = vectorstore.as_retriever()
+    def split_documents(self, doc_list):
+        text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=512, 
+            chunk_overlap=64,
+        )
+        return text_splitter.split_documents(doc_list)
 
-# # Create retriever tool
-# from langchain.tools.retriever import create_retriever_tool
+    def setup_embeddings(self):
+        model_name = "Alibaba-NLP/gte-large-en-v1.5"
+        model_kwargs = {'device': 'cuda', "trust_remote_code": True}
+        return HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+        )
 
-# retriever_tool = create_retriever_tool(
-#     retriever,
-#     "retrieve_medication_info",
-#     "Search for information about medicines from guidance for patients",
-# )
+    def setup_vectorstore(self, doc_splits):
+        hf = self.setup_embeddings()
+        if os.path.exists("./chroma_db"):
+            self.vectorstore = Chroma(persist_directory="./chroma_db", collection_name="rag-chroma", embedding_function=hf)
+            print("Vector database loaded")
+        else:
+            self.vectorstore = Chroma.from_documents(
+                documents=doc_splits,
+                collection_name="rag-chroma",
+                embedding=hf,
+                persist_directory="./chroma_db",
+            )
+            self.vectorstore.persist()
+            print("Vector database created")
 
-# tools = [retriever_tool]
+    def setup_retriever(self):
+        self.retriever = self.vectorstore.as_retriever()
 
-# from langgraph.prebuilt import ToolExecutor
+    def run(self):
+        folder = "testdata/NHSmed"
+        doc_list = self.load_documents(folder)
+        doc_splits = self.split_documents(doc_list)
+        self.setup_vectorstore(doc_splits)
+        self.setup_retriever()
 
-# tool_executor = ToolExecutor(tools)
 
 ##################
 ### AGENT STATE ##
@@ -207,11 +153,8 @@ class AgentState(TypedDict):
         
 from typing import Annotated, Literal, Sequence, TypedDict
 
-from langchain import hub
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langgraph.prebuilt import tools_condition
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 
 #############
@@ -238,7 +181,7 @@ def verify_question(state) -> Literal["rewrite", "reject"]:
         binary_score: str = Field(description="Relevance score 'yes' or 'no'")
 
     # LLM
-    model = local_llm
+    model = RAGSystem.local_llm
 
     # LLM with tool and validation
     llm_with_tool = model.with_structured_output(grade)
@@ -305,7 +248,7 @@ def retrieve(state):
 
     # Query Expansion Retrieval
     multi_retriever = MultiQueryRetriever.from_llm(
-    retriever=retriever, llm=local_llm
+    retriever=RAGSystem.retriever, llm=RAGSystem.local_llm
     )
     
     # Self Query + Filtered Search
@@ -328,8 +271,8 @@ def retrieve(state):
     ]
     document_content_description = "Information about a specific medication"
     self_retriever = SelfQueryRetriever.from_llm(
-        local_llm,
-        vectorstore,
+        RAGSystem.local_llm,
+        RAGSystem.vectorstore,
         document_content_description,
         metadata_field_info,
     )
@@ -383,7 +326,7 @@ def reject(state):
         )
     ]
 
-    model = local_llm
+    model = RAGSystem.local_llm
     response = model.invoke(msg)
     return {"messages": [response]}
 
@@ -416,7 +359,7 @@ def rewrite(state):
         )
     ]
 
-    model = local_llm
+    model = RAGSystem.local_llm
     response = model.invoke(msg)
     print(response)
     return {
@@ -424,66 +367,66 @@ def rewrite(state):
         "rewrite_question" : response, # access from state without indexing
     }
     
+# UNUSED
+def grade_documents(state):
+    """
+    Determines whether the retrieved documents are relevant to the question.
+
+    Args:
+        state (dict): The current graph state
+
+    Returns:
+        state (dict): Updates documents key with only filtered relevant documents
+    """
+    # class for output
+    class GradeDocuments(BaseModel):
+        """Binary score for relevance check on retrieved documents."""
+
+        binary_score: str = Field(
+            description="Documents are relevant to the question, 'yes' or 'no'"
+        )
+
+    # LLM with function call
+    llm = RAGSystem.local_llm
+    structured_llm_grader = llm.with_structured_output(GradeDocuments)
+
+    # Prompt
+    system = """You are a grader assessing relevance of a retrieved document to a user question. \n 
+        If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
+        Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
+    grade_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system),
+            ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
+        ]
+    )
     
-# def grade_documents(state):
-#     """
-#     Determines whether the retrieved documents are relevant to the question.
+    retrieval_grader = grade_prompt | structured_llm_grader
 
-#     Args:
-#         state (dict): The current graph state
-
-#     Returns:
-#         state (dict): Updates documents key with only filtered relevant documents
-#     """
-#     # class for output
-#     class GradeDocuments(BaseModel):
-#         """Binary score for relevance check on retrieved documents."""
-
-#         binary_score: str = Field(
-#             description="Documents are relevant to the question, 'yes' or 'no'"
-#         )
-
-#     # LLM with function call
-#     llm = local_llm
-#     structured_llm_grader = llm.with_structured_output(GradeDocuments)
-
-#     # Prompt
-#     system = """You are a grader assessing relevance of a retrieved document to a user question. \n 
-#         If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
-#         Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
-#     grade_prompt = ChatPromptTemplate.from_messages(
-#         [
-#             ("system", system),
-#             ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
-#         ]
-#     )
+    print("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
     
-#     retrieval_grader = grade_prompt | structured_llm_grader
+    question = state["rewrite_question"]
+    documents = state["documents"]
+    failed = state["failed"]
+    messages = state["messages"]
 
-#     print("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
-    
-#     question = state["rewrite_question"]
-#     documents = state["documents"]
-#     failed = state["failed"]
-#     messages = state["messages"]
-
-#     # Score each doc
-#     filtered_docs = []
-#     for d in documents:
-#         score = retrieval_grader.invoke(
-#             {"question": question, "document": d.page_content}
-#         )
-#         grade = score.binary_score
-#         if grade == "yes":
-#             print("---GRADE: DOCUMENT RELEVANT---")
-#             print(d)
-#             filtered_docs.append(d)
-#             failed = 0 # mark as not failed if ANY doc is relevant
-#         else:
-#             print("---GRADE: DOCUMENT NOT RELEVANT---")
-#             print(d)
-#             continue
-#     return {"documents": filtered_docs, "rewrite_question": question, "failed": failed, "messages": messages}
+    # Score each doc
+    filtered_docs = []
+    for d in documents:
+        score = retrieval_grader.invoke(
+            {"question": question, "document": d.page_content}
+        )
+        grade = score.binary_score
+        if grade == "yes":
+            print("---GRADE: DOCUMENT RELEVANT---")
+            print(d)
+            filtered_docs.append(d)
+            failed = 0 # mark as not failed if ANY doc is relevant
+        else:
+            print("---GRADE: DOCUMENT NOT RELEVANT---")
+            print(d)
+            continue
+    return {"documents": filtered_docs, "rewrite_question": question, "failed": failed, "messages": messages}
 
 from langchain_community.document_compressors import FlashrankRerank
 
@@ -545,7 +488,7 @@ def generate(state):
          Answer: """),])
 
     # LLM
-    llm = local_llm
+    llm = RAGSystem.local_llm
 
     # Post-processing
     # def format_docs(docs):
@@ -564,7 +507,10 @@ def generate(state):
 #############
 
 from langgraph.graph import END, StateGraph
-from langgraph.prebuilt import ToolNode
+
+# Setup LLM and vectorDB
+RAGSystem = InitialiseRAG()
+RAGSystem.run()
 
 # Define a new graph
 workflow = StateGraph(AgentState)
@@ -591,12 +537,6 @@ workflow.add_edge("rewrite", "retrieve")
 # Grade retrieved documents
 workflow.add_edge("retrieve", "rank_documents")
 
-# # Edges taken after grade to decide to reject or generate
-# workflow.add_conditional_edges(
-#     "rank_documents",
-#     # Assess agent decision
-#     decide_to_generate,
-# )
 workflow.add_edge("rank_documents", "generate")
 
 # Finish after generate
@@ -608,23 +548,22 @@ workflow.add_edge("reject", END)
 # Compile
 graph = workflow.compile()
 
-# ##TEST RUN###
-# import pprint
-# print(vectorstore)
-# inputs = {
-#     "messages": [
-#         ("user", "Will Ciprofloxacin interact with my hibiscus eye drops. I heard it can"),
-#     ]
-# }
-# lastmessage = ""
-# for output in graph.stream(inputs):
-#     for key, value in output.items():
-#         pprint.pprint(f"Output from node '{key}':")
-#         pprint.pprint("---")
-#         pprint.pprint(value, indent=2, width=80, depth=None)
-#         message_content = value['messages'][0].content
-#     pprint.pprint("\n---\n")
-# print(message_content)
+# Test w/ console output
+def test_run():
+    import pprint
+    inputs = {
+        "messages": [
+            ("user", ""),
+        ]
+    }
+    for output in graph.stream(inputs):
+        for key, value in output.items():
+            pprint.pprint(f"Output from node '{key}':")
+            pprint.pprint("---")
+            pprint.pprint(value, indent=2, width=80, depth=None)
+            message_content = value['messages'][0].content
+        pprint.pprint("\n---\n")
+    print(message_content)
     
 # Run Flask
 if __name__ == '__main__':
