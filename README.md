@@ -156,12 +156,5 @@ app.py
 cd frontend
 npm run dev
 ```
-
-## Links
-* NHS Medicines API Documentation: https://developer.api.nhs.uk/nhs-api/documentation/5b8e85b396097ba52552d63b
-* NHS Developer Community: https://developer.community.nhs.uk/
-* NHS Website Syndicated Content Standard License Terms: https://developer.api.nhs.uk/about/terms/latest
-* Thanks to this excellent guide that was integral in developing this project: https://github.com/langchain-ai/langgraph/blob/main/examples/rag/langgraph_agentic_rag.ipynb
-
 ## Getting Involved
-If this project interests you and you'd like to get involved please email me at shyamdhokia123@hotmail.co.uk
+If this project interests you and you'd like to get involved please email me at sergiou1923@gmail.com
